@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión Integral de SSOMA - Hospital Isaías</title>
+    <!-- Incluir Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Estilo simple para el spinner */
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .animate-spin { display: inline-block; animation: spin 1s linear infinite; }
+        #worker-form-table th, #worker-form-table td { padding: 4px 8px; text-align: center; }
+        #worker-form-table th:first-child, #worker-form-table td:first-child { text-align: left; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans" id="app-body">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <!-- Cabecera -->
+        <header class="mb-6">
+            <h1 class="text-3xl font-bold text-blue-900">Gestión Integral de SSOMA</h1>
+            <p class="text-xl text-gray-600">Proyecto: Hospital de Segundo Nivel Isaías</p>
+        </header>
+
+        <!-- Dashboard de Resumen (v6) -->
+        <section class="mb-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-3">Resumen del Día</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-600">
+                    <h3 class="text-sm font-medium text-gray-500">PERSONAL TOTAL EN FRENTES</h3>
+                    <p id="total-personal" class="text-4xl font-bold text-gray-900">0</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-cyan-500">
+                    <h3 class="text-sm font-medium text-gray-500">TOTAL HOMBRES</h3>
+                    <p id="total-hombres" class="text-4xl font-bold text-gray-900">0</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-pink-500">
+                    <h3 class="text-sm font-medium text-gray-500">TOTAL MUJERES</h3>
+                    <p id="total-mujeres" class="text-4xl font-bold text-gray-900">0</p>
+                </div>
+            </div>
+            <!-- Notificador (v4) -->
+            <div id="upload-status" class="hidden mt-4 p-3 text-center text-sm text-white rounded-md shadow-lg transition-all duration-300"></div>
+        </section>
+
+        <!-- Selector de Fecha Global -->
+        <div class="mb-4 flex items-center space-x-4">
+            <div>
+                <label for="report-date" class="block text-sm font-medium text-gray-700 mb-1">Seleccionar Fecha de Consulta:</label>
+                <input type="date" id="report-date" name="report-date" class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+            </div>
+            <button id="refresh-button" class="mt-5 bg-gray-600 text-white font-bold py-2 px-4 rounded-lg shadow-lg hover:bg-gray-700 transition duration-300">
+                Refrescar Datos
+            </button>
+        </div>
+
+        <!-- Navegación de Pestañas (Tabs) -->
+        <div class="border-b border-gray-300 mb-6">
+            <nav class="flex -mb-px space-x-6">
+                <button id="btn-tab-diario" class="py-3 px-1 border-b-4 font-medium text-gray-600 hover:text-blue-600 hover:border-blue-600 focus:outline-none">
+                    Control Diario de Frentes
+                </button>
+                <button id="btn-tab-eventos" class="py-3 px-1 border-b-4 font-medium text-gray-600 hover:text-blue-600 hover:border-blue-600 focus:outline-none">
+                    Bitácora SSOMA y Eventos
+                </button>
+            </nav>
+        </div>
+
+        <!-- ==== Pestaña 1: CONTROL DIARIO DE FRENTES (MODIFICADO v7) ==== -->
+        <div id="tab-diario">
+            <!-- Botón (v3) -->
+            <div id="form-diario-btn" class="mb-6 flex justify-end hidden">
+                <button class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-blue-700 transition duration-300">
+                    + Registrar Frente de Trabajo
+                </button>
+            </div>
+            
+            <!-- Formulario de Registro Diario (v7) -->
+            <div id="form-diario-container" class="hidden mb-6 bg-white p-6 rounded-lg shadow-lg">
+                <form id="form-diario" class="space-y-6">
+                    <!-- Sección 1: Datos del Frente -->
+                    <fieldset class="border-b pb-4">
+                        <legend class="text-lg font-semibold text-gray-900">1. Datos del Frente</legend>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                            <div>
+                                <label for="area" class="block text-sm font-medium text-gray-700">Área de Trabajo</label>
+                                <input type="text" id="area" name="area" placeholder="Ej: Bloque B, Piso 2" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="actividad" class="block text-sm font-medium text-gray-700">Actividad Principal</label>
+                                <input type="text" id="actividad" name="actividad" placeholder="Ej: Revoque interior" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="capataz" class="block text-sm font-medium text-gray-700">Capataz / Responsable</label>
+                                <input type="text" id="capataz" name="capataz" placeholder="Nombre del responsable" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            </div>
+                        </div>
+                    </fieldset>
+                    
+                    <!-- Sección 2: Registro de Personal y EPPs (v6) -->
+                    <fieldset>
+                        <legend class="text-lg font-semibold text-gray-900">2. Personal y EPPs del Frente</legend>
+                        <div class="mt-4 p-4 bg-gray-50 rounded-lg">
+                            <h4 class="text-md font-semibold text-gray-800">Añadir Trabajador</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label for="worker_name" class="block text-sm font-medium text-gray-700">Nombre del Trabajador</label>
+                                    <input type="text" id="worker_name" placeholder="Ej: Juan Perez" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                </div>
+                                <div>
+                                    <label for="worker_genero" class="block text-sm font-medium text-gray-700">Género</label>
+                                    <select id="worker_genero" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                        <option value="">Seleccionar...</option>
+                                        <option value="H">Hombre</option>
+                                        <option value="M">Mujer</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">EPPs (Marcar si CUMPLE)</label>
+                                    <div class="mt-2 flex space-x-3">
+                                        <div class="flex items-center"><input id="worker_epp_casco" type="checkbox" checked class="h-4 w-4 rounded"><label for="worker_epp_casco" class="ml-1 text-sm">Casco</label></div>
+                                        <div class="flex items-center"><input id="worker_epp_botas" type="checkbox" checked class="h-4 w-4 rounded"><label for="worker_epp_botas" class="ml-1 text-sm">Botas</label></div>
+                                        <div class="flex items-center"><input id="worker_epp_guantes" type="checkbox" checked class="h-4 w-4 rounded"><label for="worker_epp_guantes" class="ml-1 text-sm">Guantes</label></div>
+                                        <div class="flex items-center"><input id="worker_epp_gafas" type="checkbox" checked class="h-4 w-4 rounded"><label for="worker_epp_gafas" class="ml-1 text-sm">Gafas</label></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-3 text-right">
+                                <button type="button" id="add-worker-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700">+ Añadir a la lista</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Tabla de Personal Añadido -->
+                        <div class="mt-4">
+                             <h4 class="text-md font-semibold text-gray-800">Lista de Personal en este Frente (<span id="total_diario">0</span>)</h4>
+                             <div class="border rounded-lg overflow-hidden mt-2">
+                                <table id="worker-form-table" class="min-w-full bg-white">
+                                    <thead class="bg-gray-100">
+                                        <tr>
+                                            <th class="p-2 text-left text-xs font-semibold text-gray-600 uppercase">Nombre</th>
+                                            <th class="p-2 text-center text-xs font-semibold text-gray-600 uppercase">Género</th>
+                                            <th class="p-2 text-center text-xs font-semibold text-gray-600 uppercase">Casco</th>
+                                            <th class="p-2 text-center text-xs font-semibold text-gray-600 uppercase">Botas</th>
+                                            <th class="p-2 text-center text-xs font-semibold text-gray-600 uppercase">Guantes</th>
+                                            <th class="p-2 text-center text-xs font-semibold text-gray-600 uppercase">Gafas</th>
+                                            <th class="p-2 text-center text-xs font-semibold text-gray-600 uppercase">Quitar</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="worker-form-table-body" class="divide-y divide-gray-200">
+                                        <!-- Filas añadidas por JS -->
+                                    </tbody>
+                                </table>
+                             </div>
+                        </div>
+                    </fieldset>
+
+                    <!-- Botones Finales -->
+                    <div class="flex justify-end gap-3 pt-4">
+                         <button type="button" id="cancel-diario-btn" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">Cancelar</button>
+                        <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-blue-700">Guardar Registro de Frente</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Reporte Detallado del Día (Tabla v7) -->
+            <section>
+                <h2 class="text-xl font-semibold text-gray-800 mb-3">Reporte Detallado de Frentes</h2>
+                <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Área</th>
+                                    <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Actividad</th>
+                                    <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Capataz</th>
+                                    <th class="p-3 text-center text-xs font-semibold text-gray-600 uppercase">N° Pers.</th>
+                                    <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Personal y EPPs</th>
+                                    <th class="p-3 text-center text-xs font-semibold text-gray-600 uppercase">EPP Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200" id="report-table-body">
+                                <!-- Filas generadas por JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ==== Pestaña 2: BITÁCORA SSOMA Y EVENTOS ==== -->
+        <div id="tab-eventos" class="hidden">
+            <!-- Botón (v3) -->
+            <div id="form-evento-btn" class="mb-6 flex justify-end hidden">
+                <button class="bg-teal-600 text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-teal-700 transition duration-300">
+                    + Registrar Evento SSOMA
+                </button>
+            </div>
+
+            <!-- Formulario de Registro de Eventos (v5) -->
+            <div id="form-evento-container" class="hidden mb-6 bg-white p-6 rounded-lg shadow-lg">
+                <form id="form-evento" class="space-y-4">
+                    <div>
+                        <label for="tipoEvento" class="block text-sm font-medium text-gray-700">Tipo de Evento</label>
+                        <select id="tipoEvento" name="tipoEvento" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500">
+                            <option value="Evidencia Registro Manual">Evidencia Registro Manual</option>
+                            <option value="Charla 5 Minutos (General)">Charla 5 Minutos (General)</option>
+                            <option value="Charla Especial">Charla Especial (Ej. Extintores)</option>
+                            <option value="Monitoreo Ambiental">Monitoreo Ambiental (Ej. Ruido)</option>
+                            <option value="Evento Climático">Evento Climático (Ej. Lluvia)</option>
+                            <option value="Inspección SSOMA">Inspección SSOMA</option>
+                            <option value="Incidente">Incidente</option>
+                            <option value="Otro">Otro</option>
+                        </select>
+                    </div>
+                     <div>
+                        <label for="descripcionEvento" class="block text-sm font-medium text-gray-700">Descripción</label>
+                        <textarea id="descripcionEvento" name="descripcionEvento" rows="3" placeholder="Detallar el evento..." required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500"></textarea>
+                    </div>
+                     <div>
+                        <label for="responsableEvento" class="block text-sm font-medium text-gray-700">Responsable del Registro</label>
+                        <input type="text" id="responsableEvento" name="responsableEvento" placeholder="Ej: Ing. SSOMA" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500">
+                    </div>
+                    <div>
+                        <label for="fotoEvento" class="block text-sm font-medium text-gray-700">Evidencia (Foto o PDF)</label>
+                        <!-- Simplificado para que el Apps Script lo maneje -->
+                        <input type="file" id="fotoEvento" name="fotoEvento" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100">
+                    </div>
+                    <div class="flex justify-end gap-3 pt-4">
+                         <button type="button" id="cancel-evento-btn" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">Cancelar</button>
+                        <button type="submit" class="bg-teal-600 text-white font-bold py-2 px-4 rounded-lg shadow-lg hover:bg-teal-700">Registrar Evento</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Listado de Eventos del Día (v5) -->
+            <section>
+                <h2 class="text-xl font-semibold text-gray-800 mb-3">Bitácora de Eventos del Día</h2>
+                <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Hora</th>
+                                    <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Tipo</th>
+                                    <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Descripción</th>
+                                    <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Responsable</th>
+                                    <th class="p-3 text-center text-xs font-semibold text-gray-600 uppercase">Evidencia</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200" id="event-table-body">
+                                <!-- Filas generadas por JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Pie de página -->
+        <footer class="mt-12 pt-6 border-t border-gray-300 text-center text-sm text-gray-500">
+            <p>
+                Desarrollado por Zacarias Ortega para el Proyecto Construcción Hospital de Segundo Nivel Isaías - Oruro
+            </p>
+        </footer>
+    </div>
+
+    <!-- Script principal del aplicativo (v8 - Google Sheets) -->
+    <script>
+        // -----------------------------------------------------------------
+        // SCRIPT v8: LÓGICA DEL APLICATIVO CON GOOGLE SHEETS
+        // -----------------------------------------------------------------
+
+        // --- URL de la API (Google Apps Script) ---
+        // ¡¡¡IMPORTANTE!!! Usted deberá pegar aquí la URL de su API de Google Apps Script
+        // (Le explicaré cómo obtenerla en el Paso a Paso)
+        const G_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbybdi1glut8UtmOh21wug8cf5ljOz_vMxR82VdF2HKMeULxLu_DHl-da5ncsAAqrEJb/exec";
+
+        let currentReportDate = getBoliviaDateString(new Date());
+        let trabajadoresEnFormulario = [];
+
+        // --- Funciones de Utilidad ---
+        function getBoliviaDateString(date) {
+            const offset = -4 * 60; 
+            const localDate = new Date(date.getTime() + (offset * 60 * 1000) + (date.getTimezoneOffset() * 60000));
+            return localDate.toISOString().split('T')[0];
+        }
+
+        // Notificador (Igual que v4/v7)
+        function showNotification(message, type = 'info') {
+            const statusEl = document.getElementById('upload-status');
+            if (!statusEl) return;
+            statusEl.classList.remove('hidden', 'bg-blue-500', 'bg-red-500', 'bg-green-500');
+            if (type === 'error') statusEl.classList.add('bg-red-500');
+            else if (type === 'success') statusEl.classList.add('bg-green-500');
+            else statusEl.classList.add('bg-blue-500');
+            statusEl.textContent = message;
+            statusEl.classList.remove('hidden');
+            setTimeout(() => statusEl.classList.add('hidden'), 4000);
+        }
+
+        // Control de Acceso (Igual que v7)
+        function setupAccessMode() {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const isRegistroMode = params.get('modo') === 'registro';
+                const isPreviewEnvironment = window.location.protocol === 'blob:';
+
+                if (isRegistroMode || isPreviewEnvironment) {
+                    document.getElementById('form-diario-btn').classList.remove('hidden');
+                    document.getElementById('form-evento-btn').classList.remove('hidden');
+                }
+            } catch (e) { console.error("Error al configurar modo de acceso:", e); }
+        }
+
+        // --- Funciones de Navegación (Tabs) ---
+        function switchTab(tabName) {
+            document.getElementById('tab-diario').classList.toggle('hidden', tabName !== 'diario');
+            document.getElementById('tab-eventos').classList.toggle('hidden', tabName !== 'eventos');
+            document.getElementById('btn-tab-diario').classList.toggle('border-blue-600', tabName === 'diario');
+            document.getElementById('btn-tab-diario').classList.toggle('text-blue-600', tabName === 'diario');
+            document.getElementById('btn-tab-diario').classList.toggle('border-transparent', tabName !== 'diario');
+            document.getElementById('btn-tab-eventos').classList.toggle('border-blue-600', tabName === 'eventos');
+            document.getElementById('btn-tab-eventos').classList.toggle('text-blue-600', tabName === 'eventos');
+            document.getElementById('btn-tab-eventos').classList.toggle('border-transparent', tabName !== 'eventos');
+            loadDataForCurrentDate(); // Cargar datos al cambiar de pestaña
+        }
+
+        // --- Carga de Datos (Ahora desde Google Sheets) ---
+        
+        function loadDataForCurrentDate() {
+            currentReportDate = document.getElementById('report-date').value;
+            loadDailyReports();
+            loadEventLog();
+        }
+
+        async function loadDailyReports() {
+            const tableBody = document.getElementById('report-table-body');
+            tableBody.innerHTML = '<tr><td colspan="6" class="p-4 text-center">Cargando datos...</td></tr>';
+            
+            try {
+                if (G_APP_SCRIPT_URL === "PEGUE_SU_URL_DE_APPS_SCRIPT_AQUI") {
+                    throw new Error("La URL de Google Apps Script no está configurada.");
+                }
+                
+                // Pedimos los datos de la Pestaña 1 (Frentes) para la fecha seleccionada
+                const response = await fetch(`${G_APP_SCRIPT_URL}?action=getFrentes&date=${currentReportDate}`);
+                const data = await response.json();
+
+                if (!response.ok) throw new Error(data.message || 'Error en el servidor');
+                
+                tableBody.innerHTML = '';
+                let totalPersonal = 0, totalHombres = 0, totalMujeres = 0;
+
+                if (data.frentes.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-500">No hay frentes registrados para esta fecha.</td></tr>';
+                }
+
+                data.frentes.forEach(frente => {
+                    // Los datos de Google Sheets vienen como strings, los convertimos
+                    const trabajadores = JSON.parse(frente.trabajadores_json || '[]');
+                    const frenteData = {
+                        area: frente.area,
+                        actividad: frente.actividad,
+                        capataz: frente.capataz,
+                        trabajadores: trabajadores
+                    };
+                    renderFrenteRow(frenteData);
+                    
+                    if (trabajadores.length > 0) {
+                        totalPersonal += trabajadores.length;
+                        trabajadores.forEach(t => {
+                            if (t.genero === 'H') totalHombres++;
+                            if (t.genero === 'M') totalMujeres++;
+                        });
+                    }
+                });
+                
+                updateDashboard(totalPersonal, totalHombres, totalMujeres);
+
+            } catch (error) {
+                console.error("Error al cargar reportes: ", error);
+                showNotification("Error al cargar reportes: " + error.message, 'error');
+                tableBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">Error al cargar datos. Verifique la URL de la API.</td></tr>`;
+            }
+        }
+
+        function updateDashboard(total, hombres, mujeres) {
+            document.getElementById('total-personal').textContent = total;
+            document.getElementById('total-hombres').textContent = hombres;
+            document.getElementById('total-mujeres').textContent = mujeres;
+        }
+
+        function renderFrenteRow(frente) {
+            const tableBody = document.getElementById('report-table-body');
+            const row = document.createElement('tr');
+            row.className = 'hover:bg-gray-50 border-b border-gray-200';
+            
+            let trabajadoresHtml = '<ul class="list-disc list-inside text-xs pl-2">';
+            let todosEPPCompletos = true;
+            if (frente.trabajadores && frente.trabajadores.length > 0) {
+                frente.trabajadores.forEach(t => {
+                    let eppStatus = [];
+                    if (t.casco) eppStatus.push('C'); else todosEPPCompletos = false;
+                    if (t.botas) eppStatus.push('B'); else todosEPPCompletos = false;
+                    if (t.guantes) eppStatus.push('G'); else todosEPPCompletos = false;
+                    if (t.gafas) eppStatus.push('F'); else todosEPPCompletos = false;
+                    let eppColor = (t.casco && t.botas && t.guantes && t.gafas) ? 'text-green-600' : 'text-red-500';
+                    trabajadoresHtml += `<li class="${eppColor}"><b>${t.nombre} (${t.genero || 'N/A'})</b> - [${eppStatus.join(', ')}]</li>`;
+                });
+            } else {
+                trabajadoresHtml += '<li>No hay personal registrado.</li>';
+                todosEPPCompletos = false;
+            }
+            trabajadoresHtml += '</ul>';
+
+            const eppGeneralHtml = todosEPPCompletos ? 
+                '<span class="font-bold text-green-600">OK</span>' : 
+                '<span class="font-bold text-red-600">INCOMPLETO</span>';
+
+            row.innerHTML = `
+                <td class="p-3 text-sm text-gray-700">${frente.area || 'N/A'}</td>
+                <td class="p-3 text-sm text-gray-700">${frente.actividad || 'N/A'}</td>
+                <td class="p-3 text-sm text-gray-700">${frente.capataz || 'N/A'}</td>
+                <td class="p-3 text-sm text-center font-bold text-blue-800">${frente.trabajadores ? frente.trabajadores.length : 0}</td>
+                <td class="p-3 text-sm">${trabajadoresHtml}</td>
+                <td class="p-3 text-sm text-center">${eppGeneralHtml}</td>
+            `;
+            tableBody.appendChild(row);
+        }
+
+        // --- Lógica del Formulario de Frentes ---
+
+        function addTrabajadorToForm() {
+            const nombreEl = document.getElementById('worker_name');
+            const generoEl = document.getElementById('worker_genero');
+            const nombre = nombreEl.value.trim();
+            const genero = generoEl.value;
+
+            if (!nombre) {
+                showNotification("Por favor, ingrese un nombre para el trabajador.", 'error');
+                return;
+            }
+            if (!genero) {
+                showNotification("Por favor, seleccione el género del trabajador.", 'error');
+                return;
+            }
+            
+            const trabajador = {
+                nombre: nombre,
+                genero: genero,
+                casco: document.getElementById('worker_epp_casco').checked,
+                botas: document.getElementById('worker_epp_botas').checked,
+                guantes: document.getElementById('worker_epp_guantes').checked,
+                gafas: document.getElementById('worker_epp_gafas').checked
+            };
+            
+            trabajadoresEnFormulario.push(trabajador);
+            
+            nombreEl.value = '';
+            generoEl.value = ''; 
+            document.getElementById('worker_epp_casco').checked = true;
+            document.getElementById('worker_epp_botas').checked = true;
+            document.getElementById('worker_epp_guantes').checked = true;
+            document.getElementById('worker_epp_gafas').checked = true;
+            nombreEl.focus();
+            
+            renderTrabajadoresFormTable();
+        }
+        
+        function renderTrabajadoresFormTable() {
+            const tableBody = document.getElementById('worker-form-table-body');
+            tableBody.innerHTML = '';
+            if (trabajadoresEnFormulario.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="7" class="p-2 text-center text-gray-500">Aún no se han añadido trabajadores a este frente.</td></tr>';
+            }
+            trabajadoresEnFormulario.forEach((t, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="p-2 text-sm">${t.nombre}</td>
+                    <td class="p-2 text-center text-sm">${t.genero}</td>
+                    <td class="p-2 text-center text-sm">${t.casco ? '✓' : '✗'}</td>
+                    <td class="p-2 text-center text-sm">${t.botas ? '✓' : '✗'}</td>
+                    <td class="p-2 text-center text-sm">${t.guantes ? '✓' : '✗'}</td>
+                    <td class="p-2 text-center text-sm">${t.gafas ? '✓' : '✗'}</td>
+                    <td class="p-2 text-center"><button type="button" onclick="window.removeTrabajadorFromForm(${index})" class="text-red-500 text-xs font-bold">X</button></td>
+                `;
+                tableBody.appendChild(row);
+            });
+            document.getElementById('total_diario').textContent = trabajadoresEnFormulario.length;
+        }
+        
+        window.removeTrabajadorFromForm = (index) => {
+            trabajadoresEnFormulario.splice(index, 1);
+            renderTrabajadoresFormTable();
+        }
+
+        // Enviar datos del frente a Google Sheets
+        async function handleDailyFormSubmit(e) {
+            e.preventDefault();
+            const form = e.target;
+            const btn = form.querySelector('button[type="submit"]');
+            
+            if (trabajadoresEnFormulario.length === 0) {
+                showNotification("Error: Debe añadir al menos un trabajador al frente.", 'error');
+                return;
+            }
+            if (G_APP_SCRIPT_URL === "PEGUE_SU_URL_DE_APPS_SCRIPT_AQUI") {
+                showNotification("Error: La URL de Google Apps Script no está configurada.", 'error');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="animate-spin mr-2">&#9696;</span> Guardando...';
+
+            try {
+                const reportData = {
+                    action: "addFrente",
+                    reportDate: document.getElementById('report-date').value,
+                    timestamp: new Date().toISOString(),
+                    area: form.area.value,
+                    actividad: form.actividad.value,
+                    capataz: form.capataz.value,
+                    // Convertimos la lista de trabajadores a JSON string para enviarla
+                    trabajadores_json: JSON.stringify(trabajadoresEnFormulario)
+                };
+
+                const response = await fetch(G_APP_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'cors',
+                    redirect: 'follow',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(reportData)
+                });
+                
+                const result = await response.json();
+                
+                if (!response.ok || result.status !== 'success') {
+                    throw new Error(result.message || 'Error en el servidor de Apps Script');
+                }
+
+                form.reset();
+                trabajadoresEnFormulario = []; 
+                renderTrabajadoresFormTable(); 
+                toggleForm('form-diario-container', false);
+                
+                showNotification("Registro de frente guardado con éxito.", 'success');
+                loadDailyReports(); // Recargar la tabla de frentes
+
+            } catch (error) {
+                console.error("Error al guardar reporte diario: ", error);
+                showNotification("Error al guardar: " + error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Guardar Registro de Frente';
+            }
+        }
+
+        // --- MÓDULO 2: BITÁCORA SSOMA Y EVENTOS (Google Sheets) ---
+
+        async function loadEventLog() {
+            const tableBody = document.getElementById('event-table-body');
+            tableBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center">Cargando eventos...</td></tr>';
+
+            try {
+                 if (G_APP_SCRIPT_URL === "PEGUE_SU_URL_DE_APPS_SCRIPT_AQUI") {
+                    throw new Error("La URL de Google Apps Script no está configurada.");
+                }
+
+                const response = await fetch(`${G_APP_SCRIPT_URL}?action=getEventos&date=${currentReportDate}`);
+                const data = await response.json();
+
+                if (!response.ok) throw new Error(data.message || 'Error en el servidor');
+
+                tableBody.innerHTML = '';
+                if (data.eventos.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">No hay eventos para esta fecha.</td></tr>';
+                }
+                
+                data.eventos.forEach((event) => {
+                    renderEventRow(event);
+                });
+
+            } catch (error) {
+                console.error("Error al cargar eventos: ", error);
+                showNotification("Error al cargar eventos: " + error.message, 'error');
+                tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error al cargar eventos.</td></tr>`;
+            }
+        }
+        
+        function renderEventRow(event) {
+            const tableBody = document.getElementById('event-table-body');
+            const row = document.createElement('tr');
+            row.className = 'hover:bg-gray-50';
+            
+            // La URL del archivo ahora vendrá de Google Drive
+            let evidenciaHtml = event.fileUrl ? 
+                `<a href="${event.fileUrl}" target="_blank" class="text-blue-600 hover:underline">Ver Evidencia</a>` : 
+                'No/Disp';
+            
+            const timestamp = event.timestamp ? new Date(event.timestamp).toLocaleTimeString('es-ES') : 'N/A';
+
+            row.innerHTML = `
+                <td class="p-3 text-sm text-gray-700">${timestamp}</td>
+                <td class="p-3 text-sm text-gray-700 font-medium">${event.tipo || 'N/A'}</td>
+                <td class="p-3 text-sm text-gray-700">${event.descripcion || 'N/A'}</td>
+                <td class="p-3 text-sm text-gray-700">${event.responsable || 'N/A'}</td>
+                <td class="p-3 text-sm text-center">${evidenciaHtml}</td>
+            `;
+            tableBody.appendChild(row);
+        }
+
+        // Función para convertir archivo a Base64 (necesario para Google Apps Script)
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result.split(',')[1]); // Solo la data Base64
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        async function handleEventFormSubmit(e) {
+            e.preventDefault();
+            const form = e.target;
+            const btn = form.querySelector('button[type="submit"]');
+            const fileInput = form.fotoEvento;
+
+            if (G_APP_SCRIPT_URL === "PEGUE_SU_URL_DE_APPS_SCRIPT_AQUI") {
+                showNotification("Error: La URL de Google Apps Script no está configurada.", 'error');
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="animate-spin mr-2">&#9696;</span> Registrando...';
+
+            try {
+                let fileData = null;
+                let fileName = null;
+                let fileType = null;
+
+                if (fileInput.files[0]) {
+                    const file = fileInput.files[0];
+                    showNotification(`Procesando archivo ${file.name}...`, 'info');
+                    fileData = await fileToBase64(file); // Convertir a Base64
+                    fileName = file.name;
+                    fileType = file.type;
+                }
+
+                const eventData = {
+                    action: "addEvento",
+                    reportDate: document.getElementById('report-date').value,
+                    timestamp: new Date().toISOString(),
+                    tipo: form.tipoEvento.value,
+                    descripcion: form.descripcionEvento.value,
+                    responsable: form.responsableEvento.value,
+                    // Datos del archivo para que Apps Script lo cree en Drive
+                    fileData: fileData,
+                    fileName: fileName,
+                    fileType: fileType
+                };
+                
+                showNotification('Enviando al servidor...', 'info');
+
+                const response = await fetch(G_APP_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'cors',
+                    redirect: 'follow',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(eventData)
+                });
+                
+                const result = await response.json();
+
+                if (!response.ok || result.status !== 'success') {
+                    throw new Error(result.message || 'Error en el servidor de Apps Script');
+                }
+
+                form.reset();
+                toggleForm('form-evento-container', false);
+                showNotification("Evento registrado con éxito.", 'success');
+                loadEventLog(); // Recargar la tabla de eventos
+
+            } catch (error) {
+                console.error("Error al registrar evento: ", error);
+                showNotification("Error al registrar: " + error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Registrar Evento';
+            }
+        }
+
+
+        // --- Funciones Comunes ---
+        function toggleForm(formId, show) {
+            const formContainer = document.getElementById(formId);
+            const btnId = formId.replace('container', 'btn');
+            const showFormBtn = document.getElementById(btnId);
+            formContainer.classList.toggle('hidden', !show);
+            showFormBtn.classList.toggle('hidden', show);
+        }
+
+        // --- Event Listeners Globales ---
+        document.addEventListener('DOMContentLoaded', () => {
+            setupAccessMode(); 
+            // firebaseInit() ya no se llama, todo se carga al refrescar
+            
+            document.getElementById('report-date').value = currentReportDate;
+            document.getElementById('report-date').addEventListener('change', loadDataForCurrentDate);
+            document.getElementById('refresh-button').addEventListener('click', loadDataForCurrentDate);
+
+            document.getElementById('btn-tab-diario').addEventListener('click', () => switchTab('diario'));
+            document.getElementById('btn-tab-eventos').addEventListener('click', () => switchTab('eventos'));
+
+            // Listeners Módulo 1 (Diario)
+            document.getElementById('form-diario-btn').addEventListener('click', () => toggleForm('form-diario-container', true));
+            document.getElementById('cancel-diario-btn').addEventListener('click', () => {
+                toggleForm('form-diario-container', false);
+                document.getElementById('form-diario').reset(); 
+                trabajadoresEnFormulario = [];
+                renderTrabajadoresFormTable();
+            });
+            document.getElementById('form-diario').addEventListener('submit', handleDailyFormSubmit);
+            document.getElementById('add-worker-btn').addEventListener('click', addTrabajadorToForm);
+            
+            // Listeners Módulo 2 (Eventos)
+            document.getElementById('form-evento-btn').addEventListener('click', () => toggleForm('form-evento-container', true));
+            document.getElementById('cancel-evento-btn').addEventListener('click', () => {
+                toggleForm('form-evento-container', false);
+                document.getElementById('form-evento').reset(); 
+            });
+            document.getElementById('form-evento').addEventListener('submit', handleEventFormSubmit);
+            
+            switchTab('diario');
+            renderTrabajadoresFormTable();
+        });
+
+    </script>
+</body>
+</html>
