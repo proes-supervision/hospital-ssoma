@@ -140,7 +140,7 @@
                                         <tr>
                                             <th class="p-2 text-left text-xs font-semibold text-gray-600 uppercase">Nombre</th>
                                             <th class="p-2 text-center text-xs font-semibold text-gray-600 uppercase">Género</th>
-                                            <th class="p-2 text-center text-xs font-semibold text-gray-600 uppercase">Casco</th>
+                                            <th class_="" "p-2 text-center text-xs font-semibold text-gray-600 uppercase"="">Casco</th>
                                             <th class="p-2 text-center text-xs font-semibold text-gray-600 uppercase">Botas</th>
                                             <th class="p-2 text-center text-xs font-semibold text-gray-600 uppercase">Guantes</th>
                                             <th class="p-2 text-center text-xs font-semibold text-gray-600 uppercase">Gafas</th>
@@ -264,10 +264,10 @@
         </footer>
     </div>
 
-    <!-- Script principal del aplicativo (v9 - Google Sheets con recarga auto) -->
+    <!-- Script principal del aplicativo (v10 - Google Sheets con recarga demorada) -->
     <script>
         // -----------------------------------------------------------------
-        // SCRIPT v9: LÓGICA DEL APLICATIVO CON GOOGLE SHEETS
+        // SCRIPT v10: LÓGICA DEL APLICATIVO CON GOOGLE SHEETS
         // -----------------------------------------------------------------
 
         // --- URL de la API (Google Apps Script) ---
@@ -339,6 +339,12 @@
             
             try {
                 if (G_APP_SCRIPT_URL === "PEGUE_SU_URL_DE_APPS_SCRIPT_AQUI") {
+                    // Si estamos en la Vista Previa (blob:), usamos datos de simulación
+                    if (window.location.protocol === 'blob:') {
+                         tableBody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-500">Modo simulación. Conecte la URL de Apps Script para ver datos.</td></tr>';
+                         updateDashboard(0,0,0);
+                         return;
+                    }
                     throw new Error("La URL de Google Apps Script no está configurada.");
                 }
                 
@@ -520,7 +526,6 @@
                     area: form.area.value,
                     actividad: form.actividad.value,
                     capataz: form.capataz.value,
-                    // Convertimos la lista de trabajadores a JSON string para enviarla
                     trabajadores_json: JSON.stringify(trabajadoresEnFormulario)
                 };
 
@@ -545,9 +550,9 @@
                 
                 showNotification("Registro de frente guardado con éxito.", 'success');
                 
-                // *** ¡¡¡LA SOLUCIÓN v9!!! ***
-                // Después de guardar, volver a cargar los datos de la tabla.
-                loadDailyReports(); 
+                // *** ¡¡¡LA SOLUCIÓN v10!!! ***
+                // Después de guardar, ESPERAR 1.5s y volver a cargar los datos.
+                setTimeout(loadDailyReports, 1500); 
 
             } catch (error) {
                 console.error("Error al guardar reporte diario: ", error);
@@ -566,6 +571,11 @@
 
             try {
                  if (G_APP_SCRIPT_URL === "PEGUE_SU_URL_DE_APPS_SCRIPT_AQUI") {
+                    // Simulación para Vista Previa
+                    if (window.location.protocol === 'blob:') {
+                        tableBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">Modo simulación. Conecte la URL.</td></tr>';
+                        return;
+                    }
                     throw new Error("La URL de Google Apps Script no está configurada.");
                 }
 
@@ -682,9 +692,9 @@
                 toggleForm('form-evento-container', false);
                 showNotification("Evento registrado con éxito.", 'success');
                 
-                // *** ¡¡¡LA SOLUCIÓN v9!!! ***
-                // Después de guardar, volver a cargar los datos de la tabla.
-                loadEventLog(); 
+                // *** ¡¡¡LA SOLUCIÓN v10!!! ***
+                // Después de guardar, ESPERAR 1.5s y volver a cargar los datos.
+                setTimeout(loadEventLog, 1500); 
 
             } catch (error) {
                 console.error("Error al registrar evento: ", error);
@@ -708,7 +718,6 @@
         // --- Event Listeners Globales ---
         document.addEventListener('DOMContentLoaded', () => {
             setupAccessMode(); 
-            // firebaseInit() ya no se llama, todo se carga al refrescar
             
             document.getElementById('report-date').value = currentReportDate;
             document.getElementById('report-date').addEventListener('change', loadDataForCurrentDate);
