@@ -223,7 +223,6 @@
                     </div>
                     <div>
                         <label for="fotoEvento" class="block text-sm font-medium text-gray-700">Evidencia (Foto o PDF)</label>
-                        <!-- Simplificado para que el Apps Script lo maneje -->
                         <input type="file" id="fotoEvento" name="fotoEvento" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100">
                     </div>
                     <div class="flex justify-end gap-3 pt-4">
@@ -265,15 +264,15 @@
         </footer>
     </div>
 
-    <!-- Script principal del aplicativo (v8 - Google Sheets) -->
+    <!-- Script principal del aplicativo (v9 - Google Sheets con recarga auto) -->
     <script>
         // -----------------------------------------------------------------
-        // SCRIPT v8: LÓGICA DEL APLICATIVO CON GOOGLE SHEETS
+        // SCRIPT v9: LÓGICA DEL APLICATIVO CON GOOGLE SHEETS
         // -----------------------------------------------------------------
 
         // --- URL de la API (Google Apps Script) ---
         // ¡¡¡IMPORTANTE!!! Usted deberá pegar aquí la URL de su API de Google Apps Script
-        // (Le explicaré cómo obtenerla en el Paso a Paso)
+        // (La que obtuvo al "Implementar" el archivo Code.gs)
         const G_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbybdi1glut8UtmOh21wug8cf5ljOz_vMxR82VdF2HKMeULxLu_DHl-da5ncsAAqrEJb/exec";
 
         let currentReportDate = getBoliviaDateString(new Date());
@@ -545,7 +544,10 @@
                 toggleForm('form-diario-container', false);
                 
                 showNotification("Registro de frente guardado con éxito.", 'success');
-                loadDailyReports(); // Recargar la tabla de frentes
+                
+                // *** ¡¡¡LA SOLUCIÓN v9!!! ***
+                // Después de guardar, volver a cargar los datos de la tabla.
+                loadDailyReports(); 
 
             } catch (error) {
                 console.error("Error al guardar reporte diario: ", error);
@@ -679,7 +681,10 @@
                 form.reset();
                 toggleForm('form-evento-container', false);
                 showNotification("Evento registrado con éxito.", 'success');
-                loadEventLog(); // Recargar la tabla de eventos
+                
+                // *** ¡¡¡LA SOLUCIÓN v9!!! ***
+                // Después de guardar, volver a cargar los datos de la tabla.
+                loadEventLog(); 
 
             } catch (error) {
                 console.error("Error al registrar evento: ", error);
@@ -733,6 +738,9 @@
             
             switchTab('diario');
             renderTrabajadoresFormTable();
+            
+            // Cargar los datos iniciales al cargar la página
+            loadDataForCurrentDate();
         });
 
     </script>
